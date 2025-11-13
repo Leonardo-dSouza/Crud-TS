@@ -1,34 +1,34 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { ContinentsService } from './continents.service';
+import { ContinentService } from './continent.service';
 import { CreateContinentDto } from './dto/create-continent.dto';
 import { UpdateContinentDto } from './dto/update-continent.dto';
 
-@Controller('continents')
-export class ContinentsController {
-  constructor(private readonly continentsService: ContinentsService) {}
+@Controller('continent')
+export class ContinentController {
+  constructor(private readonly continentService: ContinentService) {}
 
   @Post()
   create(@Body() createContinentDto: CreateContinentDto) {
-    return this.continentsService.create(createContinentDto);
+    return this.continentService.create(createContinentDto);
   }
 
   @Get()
   findAll() {
-    return this.continentsService.findAll();
+    return this.continentService.findAll();
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.continentsService.findOne(+id);
+    return this.continentService.findOne(+id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateContinentDto: UpdateContinentDto) {
-    return this.continentsService.update(+id, updateContinentDto);
+    return this.continentService.update(+id, updateContinentDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.continentsService.remove(+id);
+    return this.continentService.remove(+id);
   }
 }

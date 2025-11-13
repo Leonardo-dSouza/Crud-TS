@@ -3,13 +3,13 @@ import { CreateContinentDto } from './dto/create-continent.dto';
 import { UpdateContinentDto } from './dto/update-continent.dto';
 
 @Injectable()
-export class ContinentsService {
+export class ContinentService {
   create(createContinentDto: CreateContinentDto) {
     return 'This action adds a new continent';
   }
 
   findAll() {
-    return `This action returns all continents`;
+    return `This action returns all continent`;
   }
 
   findOne(id: number) {

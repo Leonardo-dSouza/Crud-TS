@@ -3,13 +3,13 @@ import { CreateCityDto } from './dto/create-city.dto';
 import { UpdateCityDto } from './dto/update-city.dto';
 
 @Injectable()
-export class CitiesService {
+export class CityService {
   create(createCityDto: CreateCityDto) {
     return 'This action adds a new city';
   }
 
   findAll() {
-    return `This action returns all cities`;
+    return `This action returns all city`;
   }
 
   findOne(id: number) {

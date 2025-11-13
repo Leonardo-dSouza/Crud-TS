@@ -3,13 +3,13 @@ import { CreateCountryDto } from './dto/create-country.dto';
 import { UpdateCountryDto } from './dto/update-country.dto';
 
 @Injectable()
-export class CountriesService {
+export class CountryService {
   create(createCountryDto: CreateCountryDto) {
     return 'This action adds a new country';
   }
 
   findAll() {
-    return `This action returns all countries`;
+    return `This action returns all country`;
   }
 
   findOne(id: number) {
