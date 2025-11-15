@@ -14,6 +14,7 @@ model continent {
   con_id                Int       @id @default(autoincrement())
   con_name              String       @unique @db.VarChar(100)
   con_description       String       @db.Text
+  
   countries             country[] 
 
   createdAt             DateTime  @default(now())
@@ -23,6 +24,9 @@ model continent {
 model country {
   cou_id                 Int      @id @default(autoincrement())
   cou_name               String      @unique @db.VarChar(80)
+  cou_language           String      @db.VarChar(50)
+  cou_coin               String      @db.VarChar(50)
+  cou_flag               String      @db.VarChar(255)
   cou_population         Int
 
   con_id                 Int
@@ -37,7 +41,8 @@ model city {
   cit_id                 Int       @id @default(autoincrement())
   cit_name               String       @unique @db.VarChar(80)
   cit_population         Int
-
+  cit_latitude           Float
+  cit_longitude          Float
 
   cou_id                 Int
   country                country      @relation(fields: [cou_id], references: [cou_id], onDelete: Cascade)
