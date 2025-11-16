@@ -1,1 +1,4 @@
-export class CreateContinentDto {}
+export class CreateContinentDto {
+    name: string;
+    description: string;       
+}
