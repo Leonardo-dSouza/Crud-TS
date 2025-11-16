@@ -4,6 +4,9 @@
 
 ### Modo Desenvolvimento (com watch)
 ```bash
+npm install
+npx migrate dev
+npm run db:seed
 npm run start:dev
 ```
 Inicia o servidor Nest com recompilação automática ao salvar arquivos. **Recomendado durante desenvolvimento.**
