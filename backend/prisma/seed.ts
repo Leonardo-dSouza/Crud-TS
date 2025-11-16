@@ -1,5 +1,6 @@
 // prisma/prisma.seed.ts
-import { PrismaClient } from '../generated/prisma/client.js'
+const path = require('path');
+const { PrismaClient } = require(path.join(process.cwd(), 'node_modules','@prisma','client','.prisma','client','client.js'));
 
 const prisma = new PrismaClient()
 
