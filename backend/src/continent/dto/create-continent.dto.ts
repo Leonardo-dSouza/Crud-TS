@@ -1,4 +1,4 @@
 export class CreateContinentDto {
     name: string;
-    description: string;       
+    description: string;
 }
