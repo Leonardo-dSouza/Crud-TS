@@ -8,7 +8,10 @@ export class ContinentService {
   constructor(private prisma: PrismaService) {}
   create(createContinentDto: CreateContinentDto) {
     return this.prisma.continent.create({
-      data: createContinentDto,
+      data: {
+        con_name: createContinentDto.name,
+        con_description: createContinentDto.description,
+      },
     });
   }
 
@@ -25,7 +28,10 @@ export class ContinentService {
   update(id: number, updateContinentDto: UpdateContinentDto) {
     return this.prisma.continent.update({
       where: { con_id: id },
-      data: updateContinentDto,
+      data: {
+        con_name: updateContinentDto.name,
+        con_description: updateContinentDto.description,
+      },
     });
   }
 
