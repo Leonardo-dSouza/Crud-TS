@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import {Globe, Plus, Edit2, Trash2, Search, X} from 'lucide-react'
 
 interface Continent {
@@ -20,6 +20,10 @@ function ContinentManager() {
   const [editingContinent, setEditingContinent] = useState<Continent | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [formData, setFormData] = useState({ nome: "", descricao: "" })
+  
+  useEffect(() => {
+    console.log(formData)
+  }, [formData])
 
   const filteredContinents = continents.filter((continent) =>
     continent.nome.toLowerCase().includes(searchTerm.toLowerCase())

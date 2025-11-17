@@ -28,7 +28,7 @@ function Dashboard() {
         totalPopulation: 7953000000,
       })
       setLoading(false)
-    }, 500)
+    }, 5000)
   }, [])
 
   const statsCards = [
