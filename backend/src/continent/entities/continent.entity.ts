@@ -1,11 +1,11 @@
-import { City } from "../../city/entities/city.entity";
+import { Country } from "src/country/entities/country.entity";
 
 export class Continent {
     id: number;
     name: string
     description: string
     
-    countries: City[];
+    countries: Country[];
 
     createdAt: Date;
     updatedAt: Date;
