@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet"
 import { Icon, divIcon } from "leaflet"
 import {MapPin, Globe, Thermometer, Cloud, Wind, Droplets, Eye, Navigation} from 'lucide-react'
 import "leaflet/dist/leaflet.css"
+import { fetchCities, fetchCountries, fetchContinents } from "../lib/api"
 
 // Definir interface para dados de cidade
 interface City {
@@ -39,88 +40,9 @@ function MapController({ center, zoom }: { center: [number, number]; zoom: numbe
 }
 
 function MapView() {
-  const [cities, setCities] = useState<City[]>([
-    {
-      id: "1",
-      nome: "São Paulo",
-      populacao: 12300000,
-      latitude: -23.5505,
-      longitude: -46.6333,
-      idPais: "brasil",
-      paisNome: "Brasil",
-      continenteNome: "América do Sul"
-    },
-    {
-      id: "2",
-      nome: "Rio de Janeiro",
-      populacao: 6748000,
-      latitude: -22.9068,
-      longitude: -43.1729,
-      idPais: "brasil",
-      paisNome: "Brasil",
-      continenteNome: "América do Sul"
-    },
-    {
-      id: "3",
-      nome: "Nova York",
-      populacao: 8336817,
-      latitude: 40.7128,
-      longitude: -74.0060,
-      idPais: "eua",
-      paisNome: "Estados Unidos",
-      continenteNome: "América do Norte"
-    },
-    {
-      id: "4",
-      nome: "Londres",
-      populacao: 8982000,
-      latitude: 51.5074,
-      longitude: -0.1278,
-      idPais: "uk",
-      paisNome: "Reino Unido",
-      continenteNome: "Europa"
-    },
-    {
-      id: "5",
-      nome: "Tóquio",
-      populacao: 13960000,
-      latitude: 35.6762,
-      longitude: 139.6503,
-      idPais: "japao",
-      paisNome: "Japão",
-      continenteNome: "Ásia"
-    },
-    {
-      id: "6",
-      nome: "Paris",
-      populacao: 2161000,
-      latitude: 48.8566,
-      longitude: 2.3522,
-      idPais: "franca",
-      paisNome: "França",
-      continenteNome: "Europa"
-    },
-    {
-      id: "7",
-      nome: "Cairo",
-      populacao: 9500000,
-      latitude: 30.0444,
-      longitude: 31.2357,
-      idPais: "egito",
-      paisNome: "Egito",
-      continenteNome: "África"
-    },
-    {
-      id: "8",
-      nome: "Sydney",
-      populacao: 5312000,
-      latitude: -33.8688,
-      longitude: 151.2093,
-      idPais: "australia",
-      paisNome: "Austrália",
-      continenteNome: "Oceania"
-    }
-  ])
+  const [cities, setCities] = useState<City[]>([])
+  const [loadingCities, setLoadingCities] = useState<boolean>(false)
+  const [error, setError] = useState<string | null>(null)
 
   const [selectedCity, setSelectedCity] = useState<City | null>(null)
   const [mapCenter, setMapCenter] = useState<[number, number]>([20, 0])
@@ -152,6 +74,60 @@ function MapView() {
       setLoadingWeather(false)
     }, 800)
   }
+
+  // Carregar cidades, países e continentes do backend e montar nomes relacionados
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      setLoadingCities(true)
+      setError(null)
+      try {
+        const [apiCities, apiCountries, apiContinents] = await Promise.all([
+          fetchCities(),
+          fetchCountries(),
+          fetchContinents(),
+        ])
+
+        if (!mounted) return
+
+        // montar mapas para lookup
+        const countryById: Record<string, any> = {}
+        for (const c of apiCountries) {
+          countryById[c.id] = c
+        }
+
+        const continentById: Record<string, any> = {}
+        for (const c of apiContinents) {
+          continentById[c.id] = c
+        }
+
+        const enriched: City[] = apiCities.map((c: any) => {
+          const pais = countryById[String(c.idPais)]
+          const continente = pais ? continentById[String(pais.idContinente)] : undefined
+          return {
+            id: String(c.id),
+            nome: c.nome,
+            populacao: Number(c.populacao) || 0,
+            latitude: Number(c.latitude) || 0,
+            longitude: Number(c.longitude) || 0,
+            idPais: String(c.idPais),
+            paisNome: pais ? pais.nome : undefined,
+            continenteNome: continente ? continente.nome : undefined,
+          }
+        })
+
+        setCities(enriched)
+      } catch (err: any) {
+        console.error('Erro ao carregar dados do mapa', err)
+        setError(err?.message || 'Erro ao carregar dados')
+      } finally {
+        setLoadingCities(false)
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   // Centralizar mapa em uma cidade
   const focusOnCity = (city: City) => {

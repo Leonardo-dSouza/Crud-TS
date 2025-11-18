@@ -43,7 +43,16 @@ function CountryManager() {
         const [cCountries, cContinents] = await Promise.all([fetchCountries(), fetchContinents()])
         if (mounted) {
           setCountries(cCountries)
-          setContinents(cContinents.map((c) => ({ id: c.id, nome: c.nome })))
+          // keep only valid continents (have id and nome), remove duplicates and sort by name
+          const cleaned = cContinents
+            .filter((c) => c && c.id && c.nome)
+            .map((c) => ({ id: c.id, nome: c.nome }))
+          const uniqueMap: Record<string, { id: string; nome: string }> = {}
+          for (const item of cleaned) {
+            uniqueMap[item.id] = item
+          }
+          const unique = Object.values(uniqueMap).sort((a, b) => a.nome.localeCompare(b.nome))
+          setContinents(unique)
         }
       } catch (err) {
         console.error('Erro ao carregar países/continentes', err)

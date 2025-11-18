@@ -52,8 +52,8 @@ const mapContinentFromApi = (item: any): Continent => ({
 })
 
 const mapContinentToApi = (payload: Partial<Continent>) => ({
-  con_name: payload.nome,
-  con_description: payload.descricao,
+  name: payload.nome,
+  description: payload.descricao,
 })
 
 // Continents (backend uses /continent and fields con_*)
@@ -75,7 +75,7 @@ export const createContinent = async (payload: Omit<Continent, 'id'>): Promise<C
 
 export const updateContinent = async (id: string, payload: Partial<Continent>): Promise<Continent> => {
   const res = await fetch(`${API_BASE}/continent/${id}`, {
-    method: 'PUT',
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(mapContinentToApi(payload)),
   })
@@ -100,12 +100,12 @@ const mapCountryFromApi = (item: any): Country => ({
 })
 
 const mapCountryToApi = (payload: Partial<Country>) => ({
-  cou_name: payload.nome,
-  cou_language: payload.idiomaOficial,
-  cou_coin: payload.moeda,
-  cou_flag: payload.bandeira,
-  cou_population: payload.populacao,
-  con_id: payload.idContinente,
+  name: payload.nome,
+  language: payload.idiomaOficial,
+  coin: payload.moeda,
+  flag: payload.bandeira,
+  population: payload.populacao,
+  continentId: payload.idContinente ? Number(payload.idContinente) : undefined,
 })
 
 // Countries (backend uses /country and fields cou_*)
@@ -127,7 +127,7 @@ export const createCountry = async (payload: Omit<Country, 'id'>): Promise<Count
 
 export const updateCountry = async (id: string, payload: Partial<Country>): Promise<Country> => {
   const res = await fetch(`${API_BASE}/country/${id}`, {
-    method: 'PUT',
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(mapCountryToApi(payload)),
   })
@@ -151,11 +151,11 @@ const mapCityFromApi = (item: any): City => ({
 })
 
 const mapCityToApi = (payload: Partial<City>) => ({
-  cit_name: payload.nome,
-  cit_population: payload.populacao,
-  cit_latitude: payload.latitude,
-  cit_longitude: payload.longitude,
-  cou_id: payload.idPais,
+  name: payload.nome,
+  population: payload.populacao,
+  latitude: payload.latitude,
+  longitude: payload.longitude,
+  countryId: payload.idPais ? Number(payload.idPais) : undefined,
 })
 
 // Cities (backend uses /city and fields cit_*)
@@ -177,7 +177,7 @@ export const createCity = async (payload: Omit<City, 'id'>): Promise<City> => {
 
 export const updateCity = async (id: string, payload: Partial<City>): Promise<City> => {
   const res = await fetch(`${API_BASE}/city/${id}`, {
-    method: 'PUT',
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(mapCityToApi(payload)),
   })
