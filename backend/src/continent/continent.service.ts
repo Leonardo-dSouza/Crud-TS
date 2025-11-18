@@ -36,6 +36,8 @@ export class ContinentService {
   }
 
   remove(id: number) {
-    return `This action removes a #${id} continent`;
+    return this.prisma.continent.delete({
+      where: { con_id: id },
+    });
   }
 }
