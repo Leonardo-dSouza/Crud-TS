@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react"
 import {Globe, Plus, Edit2, Trash2, Search, X} from 'lucide-react'
+import { fetchContinents, createContinent, updateContinent, deleteContinent } from "../lib/api"
 
 interface Continent {
   id: string
@@ -8,13 +9,7 @@ interface Continent {
 }
 
 function ContinentManager() {
-  const [continents, setContinents] = useState<Continent[]>([
-    { id: "1", nome: "África", descricao: "Segundo maior continente do mundo" },
-    { id: "2", nome: "Américas", descricao: "Continente dividido em América do Norte e do Sul" },
-    { id: "3", nome: "Ásia", descricao: "Maior continente em área e população" },
-    { id: "4", nome: "Europa", descricao: "Continente com grande desenvolvimento econômico" },
-    { id: "5", nome: "Oceania", descricao: "Menor continente em área terrestre" },
-  ])
+  const [continents, setContinents] = useState<Continent[]>([])
   
   const [showModal, setShowModal] = useState(false)
   const [editingContinent, setEditingContinent] = useState<Continent | null>(null)
@@ -22,8 +17,21 @@ function ContinentManager() {
   const [formData, setFormData] = useState({ nome: "", descricao: "" })
   
   useEffect(() => {
-    console.log(formData)
-  }, [formData])
+    // load continents from backend
+    let mounted = true
+    ;(async () => {
+      try {
+        const data = await fetchContinents()
+        if (mounted) setContinents(data)
+      } catch (err: any) {
+        console.error('Erro ao buscar continentes', err)
+        // usuário deve garantir CORS no backend
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const filteredContinents = continents.filter((continent) =>
     continent.nome.toLowerCase().includes(searchTerm.toLowerCase())
@@ -31,19 +39,34 @@ function ContinentManager() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (editingContinent) {
-      setContinents(continents.map((c) => 
-        c.id === editingContinent.id ? { ...c, ...formData } : c
-      ))
-    } else {
-      setContinents([...continents, { id: Date.now().toString(), ...formData }])
-    }
-    closeModal()
+    ;(async () => {
+      try {
+        if (editingContinent) {
+          const updated = await updateContinent(editingContinent.id, formData)
+          setContinents(continents.map((c) => (c.id === updated.id ? updated : c)))
+        } else {
+          const created = await createContinent(formData)
+          setContinents((prev) => [...prev, created])
+        }
+        closeModal()
+      } catch (err: any) {
+        console.error('Erro ao salvar continente', err)
+        alert('Erro ao salvar continente. Verifique o backend e CORS.')
+      }
+    })()
   }
 
   const handleDelete = (id: string) => {
     if (window.confirm("Tem certeza que deseja excluir este continente?")) {
-      setContinents(continents.filter((c) => c.id !== id))
+      ;(async () => {
+        try {
+          await deleteContinent(id)
+          setContinents((prev) => prev.filter((c) => c.id !== id))
+        } catch (err: any) {
+          console.error('Erro ao deletar continente', err)
+          alert('Erro ao excluir continente. Verifique o backend e CORS.')
+        }
+      })()
     }
   }
 

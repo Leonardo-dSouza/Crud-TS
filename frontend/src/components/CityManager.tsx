@@ -1,5 +1,6 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import {MapPin, Plus, Edit2, Trash2, Search, X, Flag, Globe, Cloud, Thermometer} from 'lucide-react'
+import { fetchCities, createCity, updateCity, deleteCity, fetchCountries } from "../lib/api"
 
 interface City {
   id: string
@@ -13,44 +14,26 @@ interface City {
 }
 
 function CityManager() {
-  const [cities, setCities] = useState<City[]>([
-    {
-      id: "1",
-      nome: "São Paulo",
-      populacao: 12300000,
-      latitude: -23.5505,
-      longitude: -46.6333,
-      idPais: "1",
-      clima: "Ensolarado",
-      temperatura: 28,
-    },
-    {
-      id: "2",
-      nome: "Nova York",
-      populacao: 8336000,
-      latitude: 40.7128,
-      longitude: -74.0060,
-      idPais: "2",
-      clima: "Nublado",
-      temperatura: 22,
-    },
-    {
-      id: "3",
-      nome: "Pequim",
-      populacao: 21540000,
-      latitude: 39.9042,
-      longitude: 116.4074,
-      idPais: "3",
-      clima: "Parcialmente nublado",
-      temperatura: 25,
-    },
-  ])
+  const [cities, setCities] = useState<City[]>([])
+  const [countries, setCountries] = useState<{ id: string; nome: string; continente?: string }[]>([])
 
-  const countries = [
-    { id: "1", nome: "Brasil", continente: "Américas" },
-    { id: "2", nome: "Estados Unidos", continente: "Américas" },
-    { id: "3", nome: "China", continente: "Ásia" },
-  ]
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const [cCities, cCountries] = await Promise.all([fetchCities(), fetchCountries()])
+        if (mounted) {
+          setCities(cCities)
+          setCountries(cCountries.map((c) => ({ id: c.id, nome: c.nome, continente: '' })))
+        }
+      } catch (err) {
+        console.error('Erro ao carregar cidades/países', err)
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const [showModal, setShowModal] = useState(false)
   const [editingCity, setEditingCity] = useState<City | null>(null)
@@ -72,19 +55,34 @@ function CityManager() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (editingCity) {
-      setCities(cities.map((c) => 
-        c.id === editingCity.id ? { ...c, ...formData } : c
-      ))
-    } else {
-      setCities([...cities, { id: Date.now().toString(), ...formData }])
-    }
-    closeModal()
+    ;(async () => {
+      try {
+        if (editingCity) {
+          const updated = await updateCity(editingCity.id, formData)
+          setCities((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
+        } else {
+          const created = await createCity(formData)
+          setCities((prev) => [...prev, created])
+        }
+        closeModal()
+      } catch (err) {
+        console.error('Erro ao salvar cidade', err)
+        alert('Erro ao salvar cidade. Verifique o backend e CORS.')
+      }
+    })()
   }
 
   const handleDelete = (id: string) => {
     if (window.confirm("Tem certeza que deseja excluir esta cidade?")) {
-      setCities(cities.filter((c) => c.id !== id))
+      ;(async () => {
+        try {
+          await deleteCity(id)
+          setCities((prev) => prev.filter((c) => c.id !== id))
+        } catch (err) {
+          console.error('Erro ao deletar cidade', err)
+          alert('Erro ao excluir cidade. Verifique o backend e CORS.')
+        }
+      })()
     }
   }
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react"
 import {Flag, Plus, Edit2, Trash2, Search, X, Globe, Users} from 'lucide-react'
+import { fetchCountries, createCountry, updateCountry, deleteCountry, fetchContinents } from "../lib/api"
 
 interface Country {
   id: string
@@ -12,43 +13,9 @@ interface Country {
 }
 
 function CountryManager() {
-  const [countries, setCountries] = useState<Country[]>([
-    {
-      id: "1",
-      nome: "Brasil",
-      populacao: 215000000,
-      idiomaOficial: "Português",
-      moeda: "Real (BRL)",
-      idContinente: "2",
-      bandeira: "🇧🇷",
-    },
-    {
-      id: "2",
-      nome: "Estados Unidos",
-      populacao: 331000000,
-      idiomaOficial: "Inglês",
-      moeda: "Dólar (USD)",
-      idContinente: "2",
-      bandeira: "🇺🇸",
-    },
-    {
-      id: "3",
-      nome: "China",
-      populacao: 1400000000,
-      idiomaOficial: "Mandarim",
-      moeda: "Yuan (CNY)",
-      idContinente: "3",
-      bandeira: "🇨🇳",
-    },
-  ])
+  const [countries, setCountries] = useState<Country[]>([])
 
-  const continents = [
-    { id: "1", nome: "África" },
-    { id: "2", nome: "Américas" },
-    { id: "3", nome: "Ásia" },
-    { id: "4", nome: "Europa" },
-    { id: "5", nome: "Oceania" },
-  ]
+  const [continents, setContinents] = useState<{ id: string; nome: string }[]>([])
 
   const [showModal, setShowModal] = useState(false)
   const [editingCountry, setEditingCountry] = useState<Country | null>(null)
@@ -69,21 +36,54 @@ function CountryManager() {
     return matchesSearch && matchesContinent
   })
 
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const [cCountries, cContinents] = await Promise.all([fetchCountries(), fetchContinents()])
+        if (mounted) {
+          setCountries(cCountries)
+          setContinents(cContinents.map((c) => ({ id: c.id, nome: c.nome })))
+        }
+      } catch (err) {
+        console.error('Erro ao carregar países/continentes', err)
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (editingCountry) {
-      setCountries(countries.map((c) => 
-        c.id === editingCountry.id ? { ...c, ...formData } : c
-      ))
-    } else {
-      setCountries([...countries, { id: Date.now().toString(), ...formData }])
-    }
-    closeModal()
+    ;(async () => {
+      try {
+        if (editingCountry) {
+          const updated = await updateCountry(editingCountry.id, formData)
+          setCountries((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
+        } else {
+          const created = await createCountry(formData)
+          setCountries((prev) => [...prev, created])
+        }
+        closeModal()
+      } catch (err) {
+        console.error('Erro ao salvar país', err)
+        alert('Erro ao salvar país. Verifique o backend e CORS.')
+      }
+    })()
   }
 
   const handleDelete = (id: string) => {
     if (window.confirm("Tem certeza que deseja excluir este país?")) {
-      setCountries(countries.filter((c) => c.id !== id))
+      ;(async () => {
+        try {
+          await deleteCountry(id)
+          setCountries((prev) => prev.filter((c) => c.id !== id))
+        } catch (err) {
+          console.error('Erro ao deletar país', err)
+          alert('Erro ao excluir país. Verifique o backend e CORS.')
+        }
+      })()
     }
   }
 
