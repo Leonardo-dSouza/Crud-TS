@@ -8,7 +8,11 @@ interface Continent {
   descricao: string
 }
 
-function ContinentManager() {
+function ContinentManager({
+  openModalRef,
+}: {
+  openModalRef?: React.MutableRefObject<((continent?: any) => void) | null>
+}) {
   const [continents, setContinents] = useState<Continent[]>([])
   
   const [showModal, setShowModal] = useState(false)
@@ -80,6 +84,15 @@ function ContinentManager() {
     }
     setShowModal(true)
   }
+
+  useEffect(() => {
+    if (openModalRef) {
+      openModalRef.current = openModal
+    }
+    return () => {
+      if (openModalRef) openModalRef.current = null
+    }
+  }, [openModalRef])
 
   const closeModal = () => {
     setShowModal(false)

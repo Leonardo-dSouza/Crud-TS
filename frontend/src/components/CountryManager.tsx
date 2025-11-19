@@ -12,7 +12,11 @@ interface Country {
   bandeira?: string
 }
 
-function CountryManager() {
+function CountryManager({
+  openModalRef,
+}: {
+  openModalRef?: React.MutableRefObject<((country?: any) => void) | null>
+}) {
   const [countries, setCountries] = useState<Country[]>([])
 
   const [continents, setContinents] = useState<{ id: string; nome: string }[]>([])
@@ -120,6 +124,15 @@ function CountryManager() {
     }
     setShowModal(true)
   }
+
+  useEffect(() => {
+    if (openModalRef) {
+      openModalRef.current = openModal
+    }
+    return () => {
+      if (openModalRef) openModalRef.current = null
+    }
+  }, [openModalRef])
 
   const closeModal = () => {
     setShowModal(false)

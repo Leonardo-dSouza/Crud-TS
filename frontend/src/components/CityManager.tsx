@@ -13,7 +13,11 @@ interface City {
   temperatura?: number
 }
 
-function CityManager() {
+function CityManager({
+  openModalRef,
+}: {
+  openModalRef?: React.MutableRefObject<((city?: any) => void) | null>
+}) {
   const [cities, setCities] = useState<City[]>([])
   const [countries, setCountries] = useState<{ id: string; nome: string; continente?: string }[]>([])
 
@@ -108,6 +112,15 @@ function CityManager() {
     }
     setShowModal(true)
   }
+
+  useEffect(() => {
+    if (openModalRef) {
+      openModalRef.current = openModal
+    }
+    return () => {
+      if (openModalRef) openModalRef.current = null
+    }
+  }, [openModalRef])
 
   const closeModal = () => {
     setShowModal(false)

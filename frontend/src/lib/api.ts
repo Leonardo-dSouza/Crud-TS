@@ -63,6 +63,12 @@ export const fetchContinents = async (): Promise<Continent[]> => {
   return Array.isArray(data) ? data.map(mapContinentFromApi) : []
 }
 
+export const fetchContinentCount = async (): Promise<number> => {
+  const res = await fetch(`${API_BASE}/continent/count`)
+  const data = await handleRes(res)
+  return Number(data || 0)
+}
+
 export const createContinent = async (payload: Omit<Continent, 'id'>): Promise<Continent> => {
   const res = await fetch(`${API_BASE}/continent`, {
     method: 'POST',
@@ -115,6 +121,12 @@ export const fetchCountries = async (): Promise<Country[]> => {
   return Array.isArray(data) ? data.map(mapCountryFromApi) : []
 }
 
+export const fetchCountryCount = async (): Promise<number> => {
+  const res = await fetch(`${API_BASE}/country/count`)
+  const data = await handleRes(res)
+  return Number(data || 0)
+}
+
 export const createCountry = async (payload: Omit<Country, 'id'>): Promise<Country> => {
   const res = await fetch(`${API_BASE}/country`, {
     method: 'POST',
@@ -165,6 +177,43 @@ export const fetchCities = async (): Promise<City[]> => {
   return Array.isArray(data) ? data.map(mapCityFromApi) : []
 }
 
+export const fetchCityCount = async (): Promise<number> => {
+  const res = await fetch(`${API_BASE}/city/count`)
+  const data = await handleRes(res)
+  return Number(data || 0)
+}
+
+/**
+ * Busca a população mundial total usando a API pública REST Countries
+ * (https://restcountries.com/v3.1/all) e soma o campo `population`.
+ * Esta API é pública e não requer chave.
+ */
+export const fetchWorldPopulation = async (): Promise<number> => {
+  const res = await fetch('https://restcountries.com/v3.1/all?fields=population')
+  if (!res.ok) {
+    if (res.status === 400) {
+      const retry = await fetch('https://restcountries.com/v3.1/all?fields=population')
+      if (retry.ok) {
+        const retryData = await retry.json()
+        const retrySum = Array.isArray(retryData)
+          ? retryData.reduce((acc: number, c: any) => acc + Number(c?.population || 0), 0)
+          : 0
+        return retrySum
+      }
+    }
+  }
+
+  const data = await res.json()
+  if (!Array.isArray(data)) throw new Error('Resposta inválida de restcountries')
+
+  let sum = 0
+  for (const c of data) {
+    const p = Number(c?.population || 0)
+    if (!isNaN(p)) sum += p
+  }
+  return sum
+}
+
 export const createCity = async (payload: Omit<City, 'id'>): Promise<City> => {
   const res = await fetch(`${API_BASE}/city`, {
     method: 'POST',
@@ -192,14 +241,18 @@ export const deleteCity = async (id: string): Promise<void> => {
 
 export default {
   fetchContinents,
+  fetchContinentCount,
   createContinent,
   updateContinent,
   deleteContinent,
   fetchCountries,
+  fetchCountryCount,
   createCountry,
   updateCountry,
   deleteCountry,
   fetchCities,
+  fetchCityCount,
+  fetchWorldPopulation,
   createCity,
   updateCity,
   deleteCity,

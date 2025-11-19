@@ -1,5 +1,9 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import {Globe, Flag, MapPin, TrendingUp, Map, Cloud} from 'lucide-react'
+import api from "../lib/api"
+import ContinentManager from './ContinentManager'
+import CountryManager from './CountryManager'
+import CityManager from './CityManager'
 
 interface Stats {
   continents: number
@@ -17,23 +21,40 @@ function Dashboard() {
   })
   const [weather, setWeather] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const continentModalRef = useRef<((continent?: any) => void) | null>(null)
+  const countryModalRef = useRef<((country?: any) => void) | null>(null)
+  const cityModalRef = useRef<((city?: any) => void) | null>(null)
 
   useEffect(() => {
-    // Simular carregamento de estatísticas
-    setTimeout(() => {
-      setStats({
-        continents: 6,
-        countries: 195,
-        cities: 4234,
-        totalPopulation: 7953000000,
-      })
-      setLoading(false)
-    }, 5000)
+    let mounted = true
+    ;(async () => {
+      try {
+        setLoading(true)
+        const [continents, countries, cities, population] = await Promise.all([
+          api.fetchContinentCount(),
+          api.fetchCountryCount(),
+          api.fetchCityCount(),
+          api.fetchWorldPopulation(),
+        ])
+        if (!mounted) return
+        setStats({
+          continents: Number(continents || 0),
+          countries: Number(countries || 0),
+          cities: Number(cities || 0),
+          totalPopulation: Number(population || 0),
+        })
+      } catch (err) {
+        console.error('Erro ao carregar estatísticas', err)
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    })()
+    return () => { mounted = false }
   }, [])
 
   const statsCards = [
     {
-      title: "Continentes",
+      title: "Continentes Cadastrados",
       value: stats.continents,
       icon: Globe,
       color: "bg-green-500",
@@ -41,7 +62,7 @@ function Dashboard() {
       textColor: "text-green-600",
     },
     {
-      title: "Países",
+      title: "Países Cadastrados",
       value: stats.countries,
       icon: Flag,
       color: "bg-sky-500",
@@ -49,7 +70,7 @@ function Dashboard() {
       textColor: "text-sky-600",
     },
     {
-      title: "Cidades",
+      title: "Cidades Cadastradas",
       value: stats.cities,
       icon: MapPin,
       color: "bg-orange-500",
@@ -57,7 +78,7 @@ function Dashboard() {
       textColor: "text-orange-600",
     },
     {
-      title: "População Total",
+      title: "População Mundial Total",
       value: stats.totalPopulation.toLocaleString("pt-BR"),
       icon: TrendingUp,
       color: "bg-purple-500",
@@ -114,21 +135,21 @@ function Dashboard() {
             Ações Rápidas
           </h3>
           <div className="space-y-3">
-            <button className="w-full flex items-center gap-3 p-4 rounded-lg border border-slate-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200">
+            <button onClick={() => continentModalRef.current?.()} className="w-full flex items-center gap-3 p-4 rounded-lg border border-slate-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200">
               <Globe className="w-5 h-5 text-green-500" />
               <div className="text-left">
                 <p className="font-medium text-slate-800">Adicionar Continente</p>
                 <p className="text-xs text-slate-500">Cadastrar novo continente</p>
               </div>
             </button>
-            <button className="w-full flex items-center gap-3 p-4 rounded-lg border border-slate-200 hover:border-sky-500 hover:bg-sky-50 transition-all duration-200">
+            <button onClick={() => countryModalRef.current?.()} className="w-full flex items-center gap-3 p-4 rounded-lg border border-slate-200 hover:border-sky-500 hover:bg-sky-50 transition-all duration-200">
               <Flag className="w-5 h-5 text-sky-500" />
               <div className="text-left">
                 <p className="font-medium text-slate-800">Adicionar País</p>
                 <p className="text-xs text-slate-500">Cadastrar novo país</p>
               </div>
             </button>
-            <button className="w-full flex items-center gap-3 p-4 rounded-lg border border-slate-200 hover:border-orange-500 hover:bg-orange-50 transition-all duration-200">
+            <button onClick={() => cityModalRef.current?.()} className="w-full flex items-center gap-3 p-4 rounded-lg border border-slate-200 hover:border-orange-500 hover:bg-orange-50 transition-all duration-200">
               <MapPin className="w-5 h-5 text-orange-500" />
               <div className="text-left">
                 <p className="font-medium text-slate-800">Adicionar Cidade</p>
@@ -192,6 +213,13 @@ function Dashboard() {
             </div>
           ))}
         </div>
+      </div>
+      {/* Hidden managers so Dashboard can open the create modals. Use offscreen positioning
+          instead of display:none so the modal overlays (position:fixed) can appear. */}
+      <div style={{ position: 'absolute', left: -9999, top: -9999, width: 1, height: 1, overflow: 'hidden' }}>
+        <ContinentManager openModalRef={continentModalRef} />
+        <CountryManager openModalRef={countryModalRef} />
+        <CityManager openModalRef={cityModalRef} />
       </div>
     </div>
   )

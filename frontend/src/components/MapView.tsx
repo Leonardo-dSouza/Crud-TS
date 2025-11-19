@@ -58,21 +58,91 @@ function MapView() {
     city.continenteNome?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  // Simular carregamento de dados climáticos
-  const fetchWeatherData = (city: City) => {
+  // Buscar dados climáticos reais via Open-Meteo (grátis, sem API key)
+  // Nota: Open-Meteo fornece `current_weather` (temp, windspeed, weathercode) e vários
+  // parametros horários (umidade, pressão, visibilidade). Aqui tentamos pegar valores
+  // atuais a partir de `current_weather` e, quando possível, correlacionar com os
+  // arrays horários para obter umidade/pressão/visibilidade.
+  const weatherCodeToDescription = (code: number) => {
+    // Mapeamento simplificado para pt-BR
+    if (code === 0) return 'Céu limpo'
+    if (code === 1 || code === 2) return 'Parcialmente nublado'
+    if (code === 3) return 'Nublado'
+    if (code >= 45 && code <= 48) return 'Neblina'
+    if (code >= 51 && code <= 57) return 'Chuvisco'
+    if (code >= 61 && code <= 67) return 'Chuva'
+    if (code >= 71 && code <= 77) return 'Neve'
+    if (code >= 80 && code <= 82) return 'Aguaceiros'
+    if (code >= 95) return 'Trovoadas'
+    return 'Condição desconhecida'
+  }
+
+  const fetchWeatherData = async (city: City) => {
     setLoadingWeather(true)
-    // Simulação de API call
-    setTimeout(() => {
-      setWeather({
-        temp: Math.floor(Math.random() * 30) + 10,
-        description: ["Ensolarado", "Nublado", "Chuvoso", "Parcialmente nublado"][Math.floor(Math.random() * 4)],
-        humidity: Math.floor(Math.random() * 40) + 40,
-        windSpeed: Math.floor(Math.random() * 20) + 5,
-        visibility: Math.floor(Math.random() * 5) + 5,
-        pressure: Math.floor(Math.random() * 50) + 1000
+    setWeather(null)
+    try {
+      const lat = city.latitude
+      const lon = city.longitude
+
+      // Requisição pedindo current_weather e alguns parametros horários úteis
+      const params = new URLSearchParams({
+        latitude: String(lat),
+        longitude: String(lon),
+        current_weather: 'true',
+        hourly: 'relativehumidity_2m,pressure_msl,visibility',
+        timezone: 'auto',
+        windspeeed_unit: 'kmh'
       })
+
+      // Nota: windspeeed_unit acima possui um typo intencional? O parâmetro correto é windspeed_unit
+      // Para evitar problemas com parâmetros opcionais, montamos a URL manualmente abaixo.
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&current_weather=true&hourly=relativehumidity_2m,pressure_msl,visibility&windspeed_unit=kmh&temperature_unit=celsius&timezone=auto`
+
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`Erro ao buscar dados climáticos: ${res.status}`)
+
+      const data = await res.json()
+
+      // Extrair current_weather
+      const current = data.current_weather || null
+
+      // Tentar extrair índices horários correspondentes ao tempo atual
+      let humidity: number | null = null
+      let pressure: number | null = null
+      let visibility: number | null = null
+
+      if (data.hourly && data.hourly.time && current) {
+        const times: string[] = data.hourly.time
+        // localizar índice do timestamp mais próximo do current.time
+        const idx = times.indexOf(current.time)
+        if (idx !== -1) {
+          if (Array.isArray(data.hourly.relativehumidity_2m)) humidity = data.hourly.relativehumidity_2m[idx]
+          if (Array.isArray(data.hourly.pressure_msl)) pressure = data.hourly.pressure_msl[idx]
+          if (Array.isArray(data.hourly.visibility)) visibility = data.hourly.visibility[idx]
+        } else {
+          // fallback: tentar pegar o primeiro valor disponível
+          if (Array.isArray(data.hourly.relativehumidity_2m)) humidity = data.hourly.relativehumidity_2m[0]
+          if (Array.isArray(data.hourly.pressure_msl)) pressure = data.hourly.pressure_msl[0]
+          if (Array.isArray(data.hourly.visibility)) visibility = data.hourly.visibility[0]
+        }
+      }
+
+      const mapped = {
+        temp: current ? current.temperature : null,
+        description: current ? weatherCodeToDescription(Number(current.weathercode)) : 'Dados indisponíveis',
+        humidity: humidity,
+        windSpeed: current ? current.windspeed : null,
+        visibility: visibility,
+        pressure: pressure
+      }
+
+      setWeather(mapped)
+    } catch (err: any) {
+      console.error('Erro ao carregar dados climáticos', err)
+      setWeather({ error: err?.message || 'Erro ao obter dados climáticos' })
+    } finally {
       setLoadingWeather(false)
-    }, 800)
+    }
   }
 
   // Carregar cidades, países e continentes do backend e montar nomes relacionados
