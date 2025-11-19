@@ -25,6 +25,12 @@ export class ContinentController {
     return this.continentService.findAll();
   }
 
+  @Get()
+  @ApiOperation({ summary: 'Retornar a quantidade de continentes registrados no banco' })
+  countContinents() {
+    return this.continentService.countContinents();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Obter um continente pelo ID' })
   findOne(@Param('id') id: string) {

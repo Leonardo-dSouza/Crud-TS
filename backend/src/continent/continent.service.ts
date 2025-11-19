@@ -15,6 +15,10 @@ export class ContinentService {
     });
   }
 
+  countContinents() {
+    return this.prisma.continent.count();
+  }
+
   findAll() {
     return this.prisma.continent.findMany();
   }
